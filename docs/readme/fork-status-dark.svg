@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 510" width="900" height="510" role="img" aria-labelledby="t d" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">
+<title id="t">Fork status overview</title><desc id="d">Six changes tested on real hardware, two merged but not hardware tested, and one issue, the log flood 237, not fixed.</desc>
+<rect width="900" height="510" rx="12" fill="#1a1a19" stroke="#3b3a37"/>
+<text x="32" y="44" fill="#f0efec" font-size="21" font-weight="700" text-anchor="start">What this fork changed</text>
+<text x="32" y="70" fill="#c3c2b7" font-size="14.5" font-weight="400" text-anchor="start">Tested means run on a real LG ULTRAWIDE and M4 Pro MacBook Pro.</text>
+<rect x="24" y="90" width="852" height="44" rx="8" fill="#242422" stroke="#242422"/>
+<circle cx="50" cy="112" r="9" fill="#0ca30c"/><path d="M45.5 112 l3 3.5 l6 -7" fill="none" stroke="#1a1a19" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="72" y="117" fill="#f0efec" font-size="15" font-weight="700" text-anchor="start">Software volume</text>
+<text x="300" y="117" fill="#c3c2b7" font-size="13.5" font-weight="400" text-anchor="start">Volume slider and keys on a monitor DDC cannot reach</text>
+<text x="858" y="117" fill="#f0efec" font-size="13.5" font-weight="700" text-anchor="end">Tested</text>
+<circle cx="50" cy="156" r="9" fill="#0ca30c"/><path d="M45.5 156 l3 3.5 l6 -7" fill="none" stroke="#1a1a19" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="72" y="161" fill="#f0efec" font-size="15" font-weight="700" text-anchor="start">Text size slider</text>
+<text x="300" y="161" fill="#c3c2b7" font-size="13.5" font-weight="400" text-anchor="start">Sharp Windows-style steps from 100% to 200%</text>
+<text x="858" y="161" fill="#f0efec" font-size="13.5" font-weight="700" text-anchor="end">Tested</text>
+<rect x="24" y="178" width="852" height="44" rx="8" fill="#242422" stroke="#242422"/>
+<circle cx="50" cy="200" r="9" fill="#0ca30c"/><path d="M45.5 200 l3 3.5 l6 -7" fill="none" stroke="#1a1a19" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="72" y="205" fill="#f0efec" font-size="15" font-weight="700" text-anchor="start">Color mode (#249)</text>
+<text x="300" y="205" fill="#c3c2b7" font-size="13.5" font-weight="400" text-anchor="start">See and switch RGB or YCbCr, full or limited</text>
+<text x="858" y="205" fill="#f0efec" font-size="13.5" font-weight="700" text-anchor="end">Tested</text>
+<circle cx="50" cy="244" r="9" fill="#0ca30c"/><path d="M45.5 244 l3 3.5 l6 -7" fill="none" stroke="#1a1a19" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="72" y="249" fill="#f0efec" font-size="15" font-weight="700" text-anchor="start">Display names (#253)</text>
+<text x="300" y="249" fill="#c3c2b7" font-size="13.5" font-weight="400" text-anchor="start">Tells identical monitors apart</text>
+<text x="858" y="249" fill="#f0efec" font-size="13.5" font-weight="700" text-anchor="end">Tested</text>
+<rect x="24" y="266" width="852" height="44" rx="8" fill="#242422" stroke="#242422"/>
+<circle cx="50" cy="288" r="9" fill="#0ca30c"/><path d="M45.5 288 l3 3.5 l6 -7" fill="none" stroke="#1a1a19" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="72" y="293" fill="#f0efec" font-size="15" font-weight="700" text-anchor="start">F-key volume shortcuts</text>
+<text x="300" y="293" fill="#c3c2b7" font-size="13.5" font-weight="400" text-anchor="start">Volume Up, Volume Down and Mute on plain F-keys</text>
+<text x="858" y="293" fill="#f0efec" font-size="13.5" font-weight="700" text-anchor="end">Tested</text>
+<circle cx="50" cy="332" r="9" fill="#0ca30c"/><path d="M45.5 332 l3 3.5 l6 -7" fill="none" stroke="#1a1a19" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="72" y="337" fill="#f0efec" font-size="15" font-weight="700" text-anchor="start">Full-screen panel fix</text>
+<text x="300" y="337" fill="#c3c2b7" font-size="13.5" font-weight="400" text-anchor="start">Panel stays fully on screen when the bar hides</text>
+<text x="858" y="337" fill="#f0efec" font-size="13.5" font-weight="700" text-anchor="end">Tested</text>
+<rect x="24" y="354" width="852" height="44" rx="8" fill="#242422" stroke="#242422"/>
+<circle cx="50" cy="376" r="9" fill="#fab219"/><rect x="44.5" y="374.5" width="11" height="3" rx="1.5" fill="#0b0b0b"/>
+<text x="72" y="381" fill="#f0efec" font-size="15" font-weight="700" text-anchor="start">Identical monitors (#167)</text>
+<text x="300" y="381" fill="#c3c2b7" font-size="13.5" font-weight="400" text-anchor="start">Recovery from PR #171 merged, recovery path not run</text>
+<text x="858" y="381" fill="#f0efec" font-size="13.5" font-weight="700" text-anchor="end">Untested</text>
+<circle cx="50" cy="420" r="9" fill="#fab219"/><rect x="44.5" y="418.5" width="11" height="3" rx="1.5" fill="#0b0b0b"/>
+<text x="72" y="425" fill="#f0efec" font-size="15" font-weight="700" text-anchor="start">True Tone stuck (#224)</text>
+<text x="300" y="425" fill="#c3c2b7" font-size="13.5" font-weight="400" text-anchor="start">Re-toggled when the built-in display disconnects</text>
+<text x="858" y="425" fill="#f0efec" font-size="13.5" font-weight="700" text-anchor="end">Untested</text>
+<rect x="24" y="442" width="852" height="44" rx="8" fill="#242422" stroke="#242422"/>
+<circle cx="50" cy="464" r="9" fill="#d03b3b"/><path d="M46.5 460.5 l7 7 M53.5 460.5 l-7 7" stroke="#1a1a19" stroke-width="2.2" stroke-linecap="round"/>
+<text x="72" y="469" fill="#f0efec" font-size="15" font-weight="700" text-anchor="start">Log flood (#237)</text>
+<text x="300" y="469" fill="#c3c2b7" font-size="13.5" font-weight="400" text-anchor="start">Could not reproduce, cause unknown</text>
+<text x="858" y="469" fill="#f0efec" font-size="13.5" font-weight="700" text-anchor="end">Not fixed</text>
+</svg>

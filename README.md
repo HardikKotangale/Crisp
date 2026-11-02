@@ -61,6 +61,11 @@ Installed from `didriksg/tap` earlier? `brew upgrade` moves you to the main cask
 
 ## What this fork adds
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/fork-status-dark.svg">
+  <img src="docs/readme/fork-status-light.svg" alt="What this fork changed: six changes tested on real hardware, two merged but not hardware tested, and the log flood issue not fixed" width="900">
+</picture>
+
 | Change | What you get |
 | --- | --- |
 | **Software volume** | A working volume slider and keys on a monitor that DDC can't reach and macOS gives no volume. It only touches audio going to that monitor |
@@ -70,6 +75,9 @@ Installed from `didriksg/tap` earlier? `brew upgrade` moves you to the main cask
 | **Volume shortcuts** | Volume Up, Volume Down and Mute in Settings > Keyboard Shortcuts, and an F-key can be used on its own |
 
 ### Fixes
+
+<details>
+<summary>Every fix, with links to the issues</summary>
 
 | Issue | Status |
 | --- | --- |
@@ -81,13 +89,28 @@ Installed from `didriksg/tap` earlier? `brew upgrade` moves you to the main cask
 | Software volume started near silent | A forced monitor's slider started at 0, so one press up landed at 6%. It now starts at 100 |
 | [#237](https://github.com/didriksg/Crisp/issues/237) Log flood from AmbientDisplayAgent | **Not fixed.** It didn't reproduce here and the cause is unknown |
 
+</details>
+
 ## The LG monitor story
 
 My LG ULTRAWIDE (3440x1440) is connected to a MacBook Pro through a USB-C to HDMI adapter, and its speakers are my Mac's sound output. macOS greys out volume for that output, so the only way to turn it down was the monitor's own buttons. I wanted a slider and my keyboard's volume keys, the way BetterDisplay describes it.
 
 Crisp showed no slider, so I turned on its Volume Control override. The slider appeared and did nothing. The log explained why: every volume change was failing, silently, with `write 0x62=20: failed all 3 attempts`.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/lg-audio-path-dark.svg">
+  <img src="docs/readme/lg-audio-path-light.svg" alt="DDC commands from the Mac are blocked at the USB-C to HDMI adapter. Crisp instead scales the audio going to the LG, and that audio passes through the adapter to the speakers" width="960">
+</picture>
+
 **Trying to make DDC work.** DDC is how a Mac sends a monitor commands over the video cable, and every write came back with error `0xE0114102`. Spacing the commands out, sending them twice, changing the sub-address and using the second macOS I2C API all failed the same way. Then came the test that settled it:
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/lg-i2c-test-dark.svg">
+  <img src="docs/readme/lg-i2c-test-light.svg" alt="Six tests: empty I2C addresses and the DDC address all returned EDID, writes over 2 bytes were rejected, and macOS volume and CEC are unavailable" width="900">
+</picture>
+
+<details>
+<summary>The same results as a table</summary>
 
 | Test | Result |
 | --- | --- |
@@ -98,17 +121,29 @@ Crisp showed no slider, so I turned on its Volume Control override. The slider a
 | Audio device volume in macOS | Doesn't exist for this output |
 | CEC tunneling | Not supported by the adapter |
 
+</details>
+
 A real I2C bus doesn't answer at empty addresses. Something on this path is imitating the bus, and it only serves the EDID. The shortest DDC request needs about 5 bytes in one transaction and only 2 get through, so no DDC message can reach the monitor. No app can get around that, including BetterDisplay, whose maintainer says it uses DDC for volume too. USB-C itself can carry DDC; it's this path that can't. The adapter reports USB ID `057E:2003`, and `057E` is Nintendo's vendor ID, though that alone doesn't say what the adapter really is.
 
 **Going around it.** The monitor couldn't be told to lower its volume, so the Mac lowers the audio before sending it. Crisp now uses a Core Audio process tap on that one output, scales the samples, and plays them back. Other outputs are untouched, macOS unmutes by itself if Crisp ever dies, and at 100% the tap is removed, so the audio takes its normal direct path.
 
 The level was measured on Crisp's real output stream, using a test sound that peaked at `0.0445`:
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/lg-volume-levels-dark.svg">
+  <img src="docs/readme/lg-volume-levels-light.svg" alt="Peak audio output: source 0.0445, at 87.5 percent 0.0341 as expected, at 50 percent 0.0111 as expected" width="900">
+</picture>
+
+<details>
+<summary>The same results as a table</summary>
+
 | Slider | Expected | Measured |
 | --- | --- | --- |
 | 87.5% | `0.0341` | `0.0341` |
 | 50% | `0.0111` | `0.0111` |
 | 100% | Tap off, no output from Crisp | `0.0000` |
+
+</details>
 
 **Three more things went wrong along the way:**
 

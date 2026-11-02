@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 350" width="900" height="350" role="img" aria-labelledby="t d" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">
+<title id="t">Measured software volume levels</title><desc id="d">Bar chart of peak output. Source sound 0.0445. At 87.5 percent expected and measured were both 0.0341. At 50 percent expected and measured were both 0.0111.</desc>
+<rect width="900" height="350" rx="12" fill="#fcfcfb" stroke="#d8d6cf"/>
+<text x="32" y="44" fill="#0b0b0b" font-size="21" font-weight="700" text-anchor="start">Software volume does what the slider says</text>
+<text x="32" y="70" fill="#52514e" font-size="14.5" font-weight="400" text-anchor="start">Peak level of Crisp's real audio output. Test sound peak: 0.0445. Expected = slider squared.</text>
+<line x1="170.0" y1="98" x2="170.0" y2="288" stroke="#d8d6cf" stroke-width="1"/>
+<text x="170.0" y="308" fill="#6f6e69" font-size="12" font-weight="400" text-anchor="middle">0.00</text>
+<line x1="298.0" y1="98" x2="298.0" y2="288" stroke="#d8d6cf" stroke-width="1"/>
+<text x="298.0" y="308" fill="#6f6e69" font-size="12" font-weight="400" text-anchor="middle">0.01</text>
+<line x1="426.0" y1="98" x2="426.0" y2="288" stroke="#d8d6cf" stroke-width="1"/>
+<text x="426.0" y="308" fill="#6f6e69" font-size="12" font-weight="400" text-anchor="middle">0.02</text>
+<line x1="554.0" y1="98" x2="554.0" y2="288" stroke="#d8d6cf" stroke-width="1"/>
+<text x="554.0" y="308" fill="#6f6e69" font-size="12" font-weight="400" text-anchor="middle">0.03</text>
+<line x1="682.0" y1="98" x2="682.0" y2="288" stroke="#d8d6cf" stroke-width="1"/>
+<text x="682.0" y="308" fill="#6f6e69" font-size="12" font-weight="400" text-anchor="middle">0.04</text>
+<line x1="810.0" y1="98" x2="810.0" y2="288" stroke="#d8d6cf" stroke-width="1"/>
+<text x="810.0" y="308" fill="#6f6e69" font-size="12" font-weight="400" text-anchor="middle">0.05</text>
+<line x1="170" y1="98" x2="170" y2="288" stroke="#6f6e69" stroke-width="1.5"/>
+<text x="154" y="117" fill="#0b0b0b" font-size="15" font-weight="700" text-anchor="end">Input</text>
+<path d="M170 104 h565.6 a4 4 0 0 1 4 4 v16 a4 4 0 0 1 -4 4 h-565.6 z" fill="#6f6e69"/>
+<text x="749.6" y="121" fill="#0b0b0b" font-size="15" font-weight="700" text-anchor="start">0.0445</text>
+<text x="178" y="148" fill="#52514e" font-size="13" font-weight="400" text-anchor="start">source sound</text>
+<text x="154" y="183" fill="#0b0b0b" font-size="15" font-weight="700" text-anchor="end">87.5%</text>
+<path d="M170 170 h432.5 a4 4 0 0 1 4 4 v16 a4 4 0 0 1 -4 4 h-432.5 z" fill="#2a78d6"/>
+<text x="616.5" y="187" fill="#0b0b0b" font-size="15" font-weight="700" text-anchor="start">0.0341</text>
+<text x="178" y="214" fill="#52514e" font-size="13" font-weight="400" text-anchor="start">expected 0.0341, measured 0.0341</text>
+<text x="154" y="249" fill="#0b0b0b" font-size="15" font-weight="700" text-anchor="end">50%</text>
+<path d="M170 236 h138.1 a4 4 0 0 1 4 4 v16 a4 4 0 0 1 -4 4 h-138.1 z" fill="#2a78d6"/>
+<text x="322.1" y="253" fill="#0b0b0b" font-size="15" font-weight="700" text-anchor="start">0.0111</text>
+<text x="178" y="280" fill="#52514e" font-size="13" font-weight="400" text-anchor="start">expected 0.0111, measured 0.0111</text>
+<text x="32" y="338" fill="#52514e" font-size="13.5" font-weight="400" text-anchor="start">At 100% the tap is removed and Crisp outputs 0.0000, so audio takes its normal direct path.</text>
+</svg>

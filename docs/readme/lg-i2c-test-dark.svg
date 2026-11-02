@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 442" width="900" height="442" role="img" aria-labelledby="t d" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">
+<title id="t">I2C test results on the LG path</title><desc id="d">Six tests. Empty addresses answered with EDID. The DDC address returned EDID. Two byte writes were accepted, too short for DDC. Writes of three or more bytes were rejected with 0xE0114102. The output has no macOS volume and the adapter has no CEC tunneling.</desc>
+<rect width="900" height="442" rx="12" fill="#1a1a19" stroke="#3b3a37"/>
+<text x="32" y="44" fill="#f0efec" font-size="21" font-weight="700" text-anchor="start">The test that proved DDC could never pass</text>
+<text x="32" y="70" fill="#c3c2b7" font-size="14.5" font-weight="400" text-anchor="start">A real I2C bus stays silent where no device exists. This one answered everywhere.</text>
+<rect x="24" y="92" width="852" height="50" rx="8" fill="#242422" stroke="#242422"/>
+<circle cx="52" cy="117" r="10" fill="#d03b3b"/><path d="M48 113 l8 8 M56 113 l-8 8" stroke="#1a1a19" stroke-width="2.4" stroke-linecap="round"/>
+<text x="76" y="114" fill="#f0efec" font-size="15" font-weight="700" text-anchor="start">Read 0x10, 0x49, 0x77</text>
+<text x="76" y="133" fill="#a3a298" font-size="12.5" font-weight="400" text-anchor="start">empty addresses, nothing can be there</text>
+<text x="440" y="123" fill="#f0efec" font-size="15" font-weight="400" text-anchor="start">Answered with the same EDID</text>
+<circle cx="52" cy="167" r="10" fill="#d03b3b"/><path d="M48 163 l8 8 M56 163 l-8 8" stroke="#1a1a19" stroke-width="2.4" stroke-linecap="round"/>
+<text x="76" y="164" fill="#f0efec" font-size="15" font-weight="700" text-anchor="start">Read 0x37</text>
+<text x="76" y="183" fill="#a3a298" font-size="12.5" font-weight="400" text-anchor="start">the real DDC address</text>
+<text x="440" y="173" fill="#f0efec" font-size="15" font-weight="400" text-anchor="start">EDID again, never a DDC reply</text>
+<rect x="24" y="192" width="852" height="50" rx="8" fill="#242422" stroke="#242422"/>
+<circle cx="52" cy="217" r="10" fill="#fab219"/><rect x="46" y="215.5" width="12" height="3" rx="1.5" fill="#0b0b0b"/>
+<text x="76" y="214" fill="#f0efec" font-size="15" font-weight="700" text-anchor="start">Write 2 bytes</text>
+<text x="76" y="233" fill="#a3a298" font-size="12.5" font-weight="400" text-anchor="start">to any address</text>
+<text x="440" y="223" fill="#f0efec" font-size="15" font-weight="400" text-anchor="start">Accepted, but too short for DDC</text>
+<circle cx="52" cy="267" r="10" fill="#d03b3b"/><path d="M48 263 l8 8 M56 263 l-8 8" stroke="#1a1a19" stroke-width="2.4" stroke-linecap="round"/>
+<text x="76" y="264" fill="#f0efec" font-size="15" font-weight="700" text-anchor="start">Write 3 or more bytes</text>
+<text x="76" y="283" fill="#a3a298" font-size="12.5" font-weight="400" text-anchor="start">to any address</text>
+<text x="440" y="273" fill="#f0efec" font-size="15" font-weight="400" text-anchor="start">Rejected: 0xE0114102</text>
+<rect x="24" y="292" width="852" height="50" rx="8" fill="#242422" stroke="#242422"/>
+<circle cx="52" cy="317" r="10" fill="#d03b3b"/><path d="M48 313 l8 8 M56 313 l-8 8" stroke="#1a1a19" stroke-width="2.4" stroke-linecap="round"/>
+<text x="76" y="314" fill="#f0efec" font-size="15" font-weight="700" text-anchor="start">Volume in macOS</text>
+<text x="76" y="333" fill="#a3a298" font-size="12.5" font-weight="400" text-anchor="start">for this HDMI output</text>
+<text x="440" y="323" fill="#f0efec" font-size="15" font-weight="400" text-anchor="start">Does not exist</text>
+<circle cx="52" cy="367" r="10" fill="#d03b3b"/><path d="M48 363 l8 8 M56 363 l-8 8" stroke="#1a1a19" stroke-width="2.4" stroke-linecap="round"/>
+<text x="76" y="364" fill="#f0efec" font-size="15" font-weight="700" text-anchor="start">CEC tunneling</text>
+<text x="76" y="383" fill="#a3a298" font-size="12.5" font-weight="400" text-anchor="start">the other control route</text>
+<text x="440" y="373" fill="#f0efec" font-size="15" font-weight="400" text-anchor="start">Not supported by the adapter</text>
+<text x="32" y="422" fill="#c3c2b7" font-size="14" font-weight="700" text-anchor="start">Result: no DDC command can reach the monitor on this path, from any app.</text>
+</svg>
