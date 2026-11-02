@@ -129,6 +129,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 	<key>LSMinimumSystemVersion</key><string>14.0</string>
 	<key>LSUIElement</key><true/>
 	<key>NSHumanReadableCopyright</key><string>Crisp - Free &amp; Open Source</string>
+	<key>NSAudioCaptureUsageDescription</key><string>Crisp lowers the volume of a monitor that has no volume control by processing the sound going to it. Nothing is recorded or saved.</string>
 	<key>NSAppleEventsUsageDescription</key><string>Crisp uses System Events to switch Dark Mode with the system's animated transition.</string>
 	<key>SUFeedURL</key><string>https://crispmac.app/appcast.xml</string>
 	<key>SUPublicEDKey</key><string>3UT7wZoXDzrAhwCMVS3DoPt2lcya9H/cvlyXliuPuhM=</string>

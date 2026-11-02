@@ -65,9 +65,13 @@ final class SettingsService: ObservableObject, @unchecked Sendable {
         static let hidpiShortcut          = "crisp.hidpiShortcut"
         static let brightnessUpShortcut   = "crisp.brightnessUpShortcut"
         static let brightnessDownShortcut = "crisp.brightnessDownShortcut"
+        static let volumeUpShortcut       = "crisp.volumeUpShortcut"
+        static let volumeDownShortcut     = "crisp.volumeDownShortcut"
+        static let muteShortcut           = "crisp.muteShortcut"
         // Per-display: prefix + display UUID, since displayIDs are reused
         // across reconnects (same reason as crisp.softBrightness.uuid.*).
         static let brightnessPrefix       = "crisp.brightness.uuid."
+        static let displayNamePrefix      = "crisp.displayName.uuid."
     }
 
     // MARK: - Published Settings
@@ -185,11 +189,34 @@ final class SettingsService: ObservableObject, @unchecked Sendable {
 
     /// One combo, one action: clears `shortcut` off every other row and preset holding it
     /// (Carbon refuses a second registration of the same combo), then `assign` gives it here.
+    @Published var volumeUpShortcut: KeyboardShortcut? = nil {
+        didSet { saveShortcut(volumeUpShortcut, Keys.volumeUpShortcut) }
+    }
+
+    @Published var volumeDownShortcut: KeyboardShortcut? = nil {
+        didSet { saveShortcut(volumeDownShortcut, Keys.volumeDownShortcut) }
+    }
+
+    @Published var muteShortcut: KeyboardShortcut? = nil {
+        didSet { saveShortcut(muteShortcut, Keys.muteShortcut) }
+    }
+
+    private func saveShortcut(_ shortcut: KeyboardShortcut?, _ key: String) {
+        if let shortcut, let data = try? JSONEncoder().encode(shortcut) {
+            defaults.set(data, forKey: key)
+        } else {
+            defaults.removeObject(forKey: key)
+        }
+    }
+
     func assignStaticShortcut(_ shortcut: KeyboardShortcut?, assign: (KeyboardShortcut?) -> Void) {
         if let shortcut {
             if hidpiShortcut?.sameKeys(as: shortcut) == true { hidpiShortcut = nil }
             if brightnessUpShortcut?.sameKeys(as: shortcut) == true { brightnessUpShortcut = nil }
             if brightnessDownShortcut?.sameKeys(as: shortcut) == true { brightnessDownShortcut = nil }
+            if volumeUpShortcut?.sameKeys(as: shortcut) == true { volumeUpShortcut = nil }
+            if volumeDownShortcut?.sameKeys(as: shortcut) == true { volumeDownShortcut = nil }
+            if muteShortcut?.sameKeys(as: shortcut) == true { muteShortcut = nil }
         }
         assign(shortcut)
         if let shortcut {
@@ -211,6 +238,21 @@ final class SettingsService: ObservableObject, @unchecked Sendable {
 
     func setBrightness(_ value: Double, forDisplayUUID uuid: String) {
         defaults.set(value, forKey: Keys.brightnessPrefix + uuid)
+    }
+
+    /// The name the user gave a display (#253), nil for macOS's own.
+    func displayName(forDisplayUUID uuid: String) -> String? {
+        defaults.string(forKey: Keys.displayNamePrefix + uuid)
+    }
+
+    /// Blank goes back to macOS's name.
+    func setDisplayName(_ name: String, forDisplayUUID uuid: String) {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            defaults.removeObject(forKey: Keys.displayNamePrefix + uuid)
+        } else {
+            defaults.set(trimmed, forKey: Keys.displayNamePrefix + uuid)
+        }
     }
 
     // MARK: - Color History
@@ -271,6 +313,12 @@ final class SettingsService: ObservableObject, @unchecked Sendable {
         brightnessKeyTarget = defaults.string(forKey: Keys.brightnessKeyTarget)
             .flatMap(BrightnessKeyTarget.init(rawValue:)) ?? .underCursor
         brightnessKeySelectedDisplayUUIDs = Set(defaults.stringArray(forKey: Keys.brightnessKeySelected) ?? [])
+        volumeUpShortcut = defaults.data(forKey: Keys.volumeUpShortcut)
+            .flatMap { try? JSONDecoder().decode(KeyboardShortcut.self, from: $0) }
+        volumeDownShortcut = defaults.data(forKey: Keys.volumeDownShortcut)
+            .flatMap { try? JSONDecoder().decode(KeyboardShortcut.self, from: $0) }
+        muteShortcut = defaults.data(forKey: Keys.muteShortcut)
+            .flatMap { try? JSONDecoder().decode(KeyboardShortcut.self, from: $0) }
         hidpiShortcut = defaults.data(forKey: Keys.hidpiShortcut)
             .flatMap { try? JSONDecoder().decode(KeyboardShortcut.self, from: $0) }
         brightnessUpShortcut = defaults.data(forKey: Keys.brightnessUpShortcut)

@@ -17,7 +17,10 @@ struct ShortcutsSection: View {
                 icon: "command",
                 iconActive: settings.hidpiShortcut != nil
                     || settings.brightnessUpShortcut != nil
-                    || settings.brightnessDownShortcut != nil,
+                    || settings.brightnessDownShortcut != nil
+                    || settings.volumeUpShortcut != nil
+                    || settings.volumeDownShortcut != nil
+                    || settings.muteShortcut != nil,
                 // No combo subtitle: the header names a category, and a single
                 // binding there reads as the section's own shortcut. Bindings
                 // show only on their action rows inside.
@@ -44,6 +47,22 @@ struct ShortcutsSection: View {
                     leadingInset: 34
                 )
                 caption("Steps brightness like the brightness keys, on the same displays. For keyboards without them.")
+                ShortcutRecorderRow(
+                    label: "Volume Up",
+                    shortcut: binding(\.volumeUpShortcut) { settings.volumeUpShortcut = $0 },
+                    leadingInset: 34
+                )
+                ShortcutRecorderRow(
+                    label: "Volume Down",
+                    shortcut: binding(\.volumeDownShortcut) { settings.volumeDownShortcut = $0 },
+                    leadingInset: 34
+                )
+                ShortcutRecorderRow(
+                    label: "Mute",
+                    shortcut: binding(\.muteShortcut) { settings.muteShortcut = $0 },
+                    leadingInset: 34
+                )
+                caption("Changes the volume of whatever is playing the sound. An F-key works on its own, with no ⌘, ⌥ or ⌃.")
             }
         }
     }

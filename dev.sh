@@ -84,6 +84,9 @@ done
 /usr/libexec/PlistBuddy -c "Add :SUEnableAutomaticChecks bool true" "$PLIST"
 /usr/libexec/PlistBuddy -c "Add :SUVerifyUpdateBeforeExtraction bool true" "$PLIST"
 /usr/libexec/PlistBuddy -c "Add :SURequireSignedFeed bool true" "$PLIST"
+# Without it macOS refuses the software volume's permission prompt outright.
+/usr/libexec/PlistBuddy -c "Delete :NSAudioCaptureUsageDescription" "$PLIST" 2>/dev/null || true
+/usr/libexec/PlistBuddy -c "Add :NSAudioCaptureUsageDescription string Crisp lowers the volume of a monitor that has no volume control by processing the sound going to it. Nothing is recorded or saved." "$PLIST"
 xattr -cr "$APP"
 # Sign with a stable self-signed identity when one exists, so macOS keeps the
 # Accessibility grant across rebuilds. Ad-hoc signing changes the code hash every

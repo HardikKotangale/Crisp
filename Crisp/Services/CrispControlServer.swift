@@ -244,7 +244,80 @@ final class CrispControlServer {
         if let change = result.inputChange {
             return await switchInput(change, among: managedDisplays, listed: displays)
         }
+        if let change = result.renameChange {
+            guard let display = managedDisplays.first(where: { $0.displayID == change.displayID }) else {
+                return CrispControlModel.encode(.failure("display not found"))
+            }
+            SettingsService.shared.setDisplayName(change.input, forDisplayUUID: display.displayUUID)
+            display.applyName()
+        }
+        if let id = result.colorListDisplayID {
+            return await colorModes(displayID: id, among: managedDisplays)
+        }
+        if let change = result.colorChange {
+            return await setColorMode(change)
+        }
+        if let id = result.scaleListDisplayID {
+            return scales(displayID: id, among: managedDisplays)
+        }
+        if let change = result.scaleChange {
+            return await setScale(change, among: managedDisplays)
+        }
         return CrispControlModel.encode(result.response)
+    }
+
+    private func scales(displayID: UInt32, among managedDisplays: [DisplayInfo]) -> Data {
+        guard let display = managedDisplays.first(where: { $0.displayID == displayID }),
+              let info = DisplayScaleService.options(for: display) else {
+            return CrispControlModel.encode(.failure(Self.noScales))
+        }
+        return CrispControlModel.encode(.success(scales: CrispControlInputs(
+            displayID: displayID, uuid: display.displayUUID, current: info.current,
+            inputs: info.scales.map {
+                CrispControlInput(value: $0.percent, name: "\($0.percent)% (looks like \($0.mode.width)x\($0.mode.height))")
+            }
+        )))
+    }
+
+    private func setScale(_ change: CrispControlInputChange, among managedDisplays: [DisplayInfo]) async -> Data {
+        guard let display = managedDisplays.first(where: { $0.displayID == change.displayID }),
+              let info = DisplayScaleService.options(for: display) else {
+            return CrispControlModel.encode(.failure(Self.noScales))
+        }
+        let percent = Int(change.input.hasSuffix("%") ? String(change.input.dropLast()) : change.input)
+        guard let scale = info.scales.first(where: { $0.percent == percent }) else {
+            return CrispControlModel.encode(.failure("no \(change.input) step on this display; 'display scale list' names them"))
+        }
+        let done = await DisplayScaleService.apply(scale, to: display)
+        return CrispControlModel.encode(done ? .success() : .failure("the display did not take that scale"))
+    }
+
+    private static let noScales = "this display has no scale steps"
+    private static let noColorModes = "this display has no color modes Crisp can switch"
+
+    private func colorModes(displayID: UInt32, among managedDisplays: [DisplayInfo]) async -> Data {
+        guard let info = await Task.detached(operation: { ColorModeService.modes(for: displayID) }).value else {
+            return CrispControlModel.encode(.failure(Self.noColorModes))
+        }
+        let names = DisplayColorMode.names(of: info.modes)
+        return CrispControlModel.encode(.success(colorModes: CrispControlInputs(
+            displayID: displayID,
+            uuid: managedDisplays.first { $0.displayID == displayID }?.displayUUID ?? "",
+            current: Int(info.current),
+            inputs: info.modes.map { CrispControlInput(value: Int($0.id), name: names[$0.id] ?? $0.label) }
+        )))
+    }
+
+    private func setColorMode(_ change: CrispControlInputChange) async -> Data {
+        let displayID = change.displayID
+        guard let info = await Task.detached(operation: { ColorModeService.modes(for: displayID) }).value else {
+            return CrispControlModel.encode(.failure(Self.noColorModes))
+        }
+        guard let mode = DisplayColorMode.resolve(change.input, in: info.modes) else {
+            return CrispControlModel.encode(.failure("unknown color mode '\(change.input)'; 'display color list' names them"))
+        }
+        let took = await Task.detached(operation: { ColorModeService.set(mode.id, for: displayID) }).value
+        return CrispControlModel.encode(took ? .success() : .failure("the display did not take that color mode"))
     }
 
     private func inputList(displayID: UInt32, among managedDisplays: [DisplayInfo]) async -> Data {

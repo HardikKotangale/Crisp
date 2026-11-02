@@ -138,6 +138,8 @@ struct DisplayHeaderBlock: View {
                 VolumeSliderView(display: display)
                     .padding(.bottom, 4)
             }
+
+            DisplayScaleSliderView(display: display)
         }
         .padding(.top, isFirst ? 0 : 8)
     }

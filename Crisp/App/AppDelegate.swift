@@ -231,12 +231,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     /// One-shot re-sync of everything that can drift while the panel is closed
-    /// (Night Shift/True Tone, DDC brightness changed externally). Reads run off
-    /// the main thread; called at the click in showPanel.
+    /// (Night Shift/True Tone, DDC brightness changed externally), and one DDC
+    /// probe for an external latched to software gamma (#167). Reads run off the
+    /// main thread; called at the click in showPanel.
     private func refreshExternalState() {
         CoreBrightnessService.shared.refresh()
         for display in displayManager.displays {
-            Task { await BrightnessService.shared.refreshBrightness(for: display) }
+            Task { await BrightnessService.shared.refreshBrightness(for: display, probe: true) }
         }
     }
 
@@ -855,6 +856,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             screen = origin
             anchorMidX = origin.frame.maxX - (bs.frame.maxX - btnFrame.midX)
             topY = origin.visibleFrame.maxY - 1
+        }
+        // A full-screen app hides the menu bar by sliding it, status item included, off the
+        // top of the screen, so a re-anchor then (a scale change, a display change) would
+        // lift the panel with it and cut its top off. It stays where the bar belongs.
+        if let screen {
+            topY = min(topY, screen.frame.maxY - max(NSStatusBar.system.thickness, screen.safeAreaInsets.top) - 1)
         }
         displayManager.activePanelDisplayID = screen?.displayID
         let width = canvas.width

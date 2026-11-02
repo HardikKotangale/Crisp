@@ -82,6 +82,11 @@ struct CrispControlRequest: Codable, Equatable {
         case resetImage
         case listInputs
         case setInput
+        case renameDisplay
+        case listColorModes
+        case setColorMode
+        case listScales
+        case setScale
     }
 
     let command: Command
@@ -97,6 +102,9 @@ struct CrispControlRequest: Codable, Equatable {
     let value: Double?
     /// `setInput`: the input as a person typed it, a name or a number.
     let input: String?
+    /// `renameDisplay`: the new name, nil for macOS's own. `setColorMode`: the mode as a
+    /// person typed it, a name or an id. `setScale`: the percentage, with or without its %.
+    let name: String?
     init(
         command: Command,
         display: UInt32? = nil,
@@ -105,7 +113,8 @@ struct CrispControlRequest: Codable, Equatable {
         enabled: Bool? = nil,
         setting: CrispControlImageSetting? = nil,
         value: Double? = nil,
-        input: String? = nil
+        input: String? = nil,
+        name: String? = nil
     ) {
         self.command = command
         self.display = display
@@ -115,6 +124,7 @@ struct CrispControlRequest: Codable, Equatable {
         self.setting = setting
         self.value = value
         self.input = input
+        self.name = name
     }
 }
 /// One input of a monitor (#196): the VCP 0x60 value and its connector name.
@@ -215,6 +225,10 @@ struct CrispControlResponse: Codable, Equatable {
     let skippedDisplays: [String]?
     let image: CrispControlImageAdjustment?
     let inputs: CrispControlInputs?
+    /// `listColorModes`: the same shape as `inputs`, with a mode's id as its value.
+    let colorModes: CrispControlInputs?
+    /// `listScales`: the same shape as `inputs`, with a step's percentage as its value.
+    let scales: CrispControlInputs?
     let error: String?
 
     init(
@@ -228,6 +242,8 @@ struct CrispControlResponse: Codable, Equatable {
         skippedDisplays: [String]? = nil,
         image: CrispControlImageAdjustment? = nil,
         inputs: CrispControlInputs? = nil,
+        colorModes: CrispControlInputs? = nil,
+        scales: CrispControlInputs? = nil,
         error: String? = nil
     ) {
         self.ok = ok
@@ -240,6 +256,8 @@ struct CrispControlResponse: Codable, Equatable {
         self.skippedDisplays = skippedDisplays
         self.image = image
         self.inputs = inputs
+        self.colorModes = colorModes
+        self.scales = scales
         self.error = error
     }
     static func success() -> Self { Self(ok: true) }
@@ -252,6 +270,8 @@ struct CrispControlResponse: Codable, Equatable {
     static func success(presets: [CrispControlPreset]) -> Self { Self(ok: true, presets: presets) }
     static func success(image: CrispControlImageAdjustment) -> Self { Self(ok: true, image: image) }
     static func success(inputs: CrispControlInputs) -> Self { Self(ok: true, inputs: inputs) }
+    static func success(colorModes: CrispControlInputs) -> Self { Self(ok: true, colorModes: colorModes) }
+    static func success(scales: CrispControlInputs) -> Self { Self(ok: true, scales: scales) }
     static func success(preset: CrispControlPreset, skippedDisplays: [String]) -> Self {
         Self(ok: true, preset: preset, skippedDisplays: skippedDisplays)
     }
@@ -289,6 +309,12 @@ struct CrispControlResult {
     /// capabilities are read. `setInput`: the switch to make.
     let inputListDisplayID: UInt32?
     let inputChange: CrispControlInputChange?
+    /// `renameDisplay` and `setColorMode`: the display and the text the request carried.
+    let renameChange: CrispControlInputChange?
+    let colorChange: CrispControlInputChange?
+    let colorListDisplayID: UInt32?
+    let scaleChange: CrispControlInputChange?
+    let scaleListDisplayID: UInt32?
 
     init(
         _ response: CrispControlResponse,
@@ -299,7 +325,12 @@ struct CrispControlResult {
         presetToApply: String? = nil,
         imageChange: CrispControlImageChange? = nil,
         inputListDisplayID: UInt32? = nil,
-        inputChange: CrispControlInputChange? = nil
+        inputChange: CrispControlInputChange? = nil,
+        renameChange: CrispControlInputChange? = nil,
+        colorChange: CrispControlInputChange? = nil,
+        colorListDisplayID: UInt32? = nil,
+        scaleChange: CrispControlInputChange? = nil,
+        scaleListDisplayID: UInt32? = nil
     ) {
         self.response = response
         self.brightnessChange = brightnessChange
@@ -310,6 +341,11 @@ struct CrispControlResult {
         self.imageChange = imageChange
         self.inputListDisplayID = inputListDisplayID
         self.inputChange = inputChange
+        self.renameChange = renameChange
+        self.colorChange = colorChange
+        self.colorListDisplayID = colorListDisplayID
+        self.scaleChange = scaleChange
+        self.scaleListDisplayID = scaleListDisplayID
     }
 }
 enum CrispControlModel {
@@ -399,6 +435,40 @@ enum CrispControlModel {
             return handleImage(request, displays: displays, imageAdjustment: imageAdjustment)
         case .listInputs, .setInput:
             return handleInput(request, displays: displays)
+        case .renameDisplay, .listColorModes, .setColorMode, .listScales, .setScale:
+            return handleDisplaySetting(request, displays: displays)
+        }
+    }
+
+    /// Both need the display live: a name lands on its DisplayInfo, a color mode on its
+    /// framebuffer.
+    private static func handleDisplaySetting(_ request: CrispControlRequest, displays: [CrispControlDisplay]) -> CrispControlResult {
+        guard hasDisplaySelector(request) else {
+            return .init(.failure("display is required"), nil, nil, nil)
+        }
+        guard let display = target(of: request, in: displays) else {
+            return .init(.failure("display not found"), nil, nil, nil)
+        }
+        guard display.connected ?? true else {
+            return .init(.failure("display is not connected"), nil, nil, nil)
+        }
+        switch request.command {
+        case .renameDisplay:
+            return .init(.success(), nil, nil, nil, renameChange: .init(displayID: display.id, input: request.name ?? ""))
+        case .setColorMode:
+            guard let mode = request.name, !mode.isEmpty else {
+                return .init(.failure("color mode is required"), nil, nil, nil)
+            }
+            return .init(.success(), nil, nil, nil, colorChange: .init(displayID: display.id, input: mode))
+        case .setScale:
+            guard let scale = request.name, !scale.isEmpty else {
+                return .init(.failure("scale is required"), nil, nil, nil)
+            }
+            return .init(.success(), nil, nil, nil, scaleChange: .init(displayID: display.id, input: scale))
+        case .listScales:
+            return .init(.success(), nil, nil, nil, scaleListDisplayID: display.id)
+        default:
+            return .init(.success(), nil, nil, nil, colorListDisplayID: display.id)
         }
     }
 
@@ -718,6 +788,31 @@ enum CrispControlCLIModel {
             active display it switches without the disconnect. The reply comes after the
             window server has answered.
             """),
+        Entry(group: .display, usage: "display rename <display> [<name>]", summary: "Name a display, or go back to the macOS name", detail: """
+            Saved for the display's uuid. Without <name> it goes back to the name macOS
+            gives it. macOS numbers identical monitors itself, and its (1) and (2) can
+            be on the wrong screens; naming them is how to tell them apart.
+            """),
+        Entry(group: .display, usage: "display color list <display>", summary: "List the color modes of an external display", detail: """
+            The modes the display's current resolution and refresh rate offer. Each carries
+            value, its id, and name, such as RGB 8-bit Full. current is the mode in use.
+            Apple Silicon only.
+            """),
+        Entry(group: .display, usage: "display color set <display> <mode>", summary: "Switch an external display's color mode", detail: """
+            <mode> is a name or an id from 'display color list'. The screen can go black for
+            a moment. It lasts until the display reconnects, when macOS picks again, which
+            is also the way back from a mode the monitor can't show.
+            """),
+        Entry(group: .display, usage: "display scale list <display>", summary: "List the scale steps of an external display", detail: """
+            The steps this display can do sharply. Each carries value, its percentage, and
+            name, with the size it looks like. current is the percentage in use, which can
+            be one no step names.
+            """),
+        Entry(group: .display, usage: "display scale set <display> <percent>", summary: "Make everything on a display larger", detail: """
+            Text, icons and windows get larger the way Scale does on Windows, and stay sharp.
+            <percent> is a value from 'display scale list', with or without its %. The
+            screen can go black for a moment.
+            """),
         Entry(group: .brightness, usage: "brightness get <display>", summary: "Read brightness and its live maximum", detail: ""),
         Entry(group: .brightness, usage: "brightness set <display> <percent>", summary: "Set brightness", detail: """
             <percent> is 0-100, or up to maxBrightness while Extra Brightness is enabled
@@ -853,10 +948,10 @@ enum CrispControlCLIModel {
     static func receiveTimeoutSeconds(for command: CrispControlRequest.Command) -> Int {
         switch command {
         case .setBrightnessBoost: return 5
-        case .setHDR: return 6
+        case .setHDR, .setColorMode: return 6
         // The window server answers inside the app's 10 s wrapper, but the DDC hold
         // ahead of the transaction can wait 15 s and the mode restore after it 3 s.
-        case .connectDisplay, .disconnectDisplay, .toggleDisplay, .setInput: return 30
+        case .connectDisplay, .disconnectDisplay, .toggleDisplay, .setInput, .setScale: return 30
         // The first list for a monitor reads its capabilities chunk by chunk.
         case .listInputs: return 60
         // A resolution or arrangement change waits for the reconfiguration to land.
@@ -976,8 +1071,26 @@ enum CrispControlCLIModel {
            !arguments[4].isEmpty {
             return .init(command: .setInput, selector: arguments[3], input: arguments[4])
         }
+        if arguments.count == 4, arguments[0...2] == ["display", "color", "list"], !arguments[3].isEmpty {
+            return .init(command: .listColorModes, selector: arguments[3])
+        }
+        if arguments.count == 5, arguments[0...2] == ["display", "color", "set"], !arguments[3].isEmpty,
+           !arguments[4].isEmpty {
+            return .init(command: .setColorMode, selector: arguments[3], name: arguments[4])
+        }
+        if arguments.count == 4, arguments[0...2] == ["display", "scale", "list"], !arguments[3].isEmpty {
+            return .init(command: .listScales, selector: arguments[3])
+        }
+        if arguments.count == 5, arguments[0...2] == ["display", "scale", "set"], !arguments[3].isEmpty,
+           !arguments[4].isEmpty {
+            return .init(command: .setScale, selector: arguments[3], name: arguments[4])
+        }
+        if arguments.count == 4, arguments[0...1] == ["display", "rename"], !arguments[2].isEmpty {
+            return .init(command: .renameDisplay, selector: arguments[2], name: arguments[3])
+        }
         guard arguments.count == 3, arguments[0] == "display", !arguments[2].isEmpty else { return nil }
         switch arguments[1] {
+        case "rename": return .init(command: .renameDisplay, selector: arguments[2])
         case "connect": return .init(command: .connectDisplay, selector: arguments[2])
         case "disconnect": return .init(command: .disconnectDisplay, selector: arguments[2])
         case "toggle": return .init(command: .toggleDisplay, selector: arguments[2])
@@ -1011,13 +1124,19 @@ enum CrispControlText {
         case .listInputs:
             guard let inputs = response.inputs else { return "" }
             return table(inputs.inputs.map { [$0.value == inputs.current ? "*" : "", $0.name, String($0.value)] })
+        case .listColorModes:
+            guard let modes = response.colorModes else { return "" }
+            return table(modes.inputs.map { [$0.value == modes.current ? "*" : "", $0.name, String($0.value)] })
         case .getImage: return response.image.map(imageTable) ?? ""
         case .listPresets:
             guard let presets = response.presets, !presets.isEmpty else { return "no presets" }
             return table([["", "NAME", "CAPTURES", "ID"]]
                 + presets.map { [$0.active ? "*" : "", $0.name, $0.captures.joined(separator: ","), $0.id] })
         case .applyPreset: return (response.skippedDisplays ?? []).map { "skipped \($0): not connected" }.joined(separator: "\n")
-        case .setBrightness, .setBrightnessBoost, .setHDR, .setImage, .resetImage: return ""
+        case .listScales:
+            guard let scales = response.scales else { return "" }
+            return table(scales.inputs.map { [$0.value == scales.current ? "*" : "", $0.name] })
+        case .setBrightness, .setBrightnessBoost, .setHDR, .setImage, .resetImage, .renameDisplay, .setColorMode, .setScale: return ""
         }
     }
 

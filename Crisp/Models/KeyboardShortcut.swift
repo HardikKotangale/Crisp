@@ -26,16 +26,22 @@ struct KeyboardShortcut: Equatable, Codable {
 
     /// Fails when the combo has none of ⌘, ⌥, ⌃: a bare key (or shift+key) is
     /// typing, not a shortcut, and registering it would swallow normal input.
+    /// F-keys type nothing, so one can stand alone.
     init?(keyCode: UInt16, nsModifierFlags: UInt, keyLabel: String) {
         var carbon: UInt32 = 0
         if nsModifierFlags & Self.nsCommand != 0 { carbon |= Self.carbonCommand }
         if nsModifierFlags & Self.nsShift != 0 { carbon |= Self.carbonShift }
         if nsModifierFlags & Self.nsOption != 0 { carbon |= Self.carbonOption }
         if nsModifierFlags & Self.nsControl != 0 { carbon |= Self.carbonControl }
-        guard carbon & (Self.carbonCommand | Self.carbonOption | Self.carbonControl) != 0 else { return nil }
+        guard carbon & (Self.carbonCommand | Self.carbonOption | Self.carbonControl) != 0
+                || Self.isFunctionKey(keyCode) else { return nil }
         self.keyCode = UInt32(keyCode)
         self.carbonModifiers = carbon
         self.keyLabel = keyLabel
+    }
+
+    static func isFunctionKey(_ keyCode: UInt16) -> Bool {
+        specialKeyLabels[keyCode]?.first == "F"
     }
 
     /// "⌃⌥⇧⌘H": modifier glyphs in the canonical macOS order, then the key.

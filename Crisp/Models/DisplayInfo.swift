@@ -8,6 +8,12 @@ class DisplayInfo: ObservableObject, Identifiable {
     nonisolated var id: CGDirectDisplayID { displayID }
     let displayID: CGDirectDisplayID
     @Published var name: String
+    /// macOS's name for this display, and `name` unless the user renamed it (#253). macOS
+    /// numbers identical monitors itself, so its "(1)" can be on the wrong one. Its audio
+    /// device goes by this name too.
+    var systemName: String {
+        didSet { applyName() }
+    }
     @Published var isBuiltin: Bool
     @Published var isMain: Bool
     @Published var isOnline: Bool
@@ -102,13 +108,19 @@ class DisplayInfo: ObservableObject, Identifiable {
         self.hasNativeBrightness = BrightnessService.hasNativeBrightness(displayID)
 
         if builtin {
-            self.name = String(localized: "Built-in Display")
+            self.systemName = String(localized: "Built-in Display")
         } else {
             // String(displayID), not the raw UInt32: a numeric interpolation generates a
             // numeric-specifier key that never matches the catalog's "Display %@" entry.
-            self.name = NSScreen.screen(for: displayID)?.localizedName ?? String(localized: "Display \(String(displayID))")
+            self.systemName = NSScreen.screen(for: displayID)?.localizedName ?? String(localized: "Display \(String(displayID))")
         }
+        self.name = systemName
+        applyName()
+    }
 
+    /// Takes up a name just saved in SettingsService, or macOS's own if there is none.
+    func applyName() {
+        name = SettingsService.shared.displayName(forDisplayUUID: displayUUID) ?? systemName
     }
 
     /// Records the brightness this display is at, for next time it appears. Externals

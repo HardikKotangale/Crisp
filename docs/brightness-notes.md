@@ -64,6 +64,8 @@ Published state stays live while the panel is closed, so it opens already correc
 
 `reassertTrueTone` exists for issue #131: after a full wake, macOS computes True Tone against the built-in panel while an external is still training its link, and the external keeps the wrong tint until True Tone is toggled off and back on. The two calls need roughly a 0.3 s beat between them or CoreBrightness folds them into a no-op. State is read live, never from the published value, so a stale read can't switch True Tone on for someone who has it off.
 
+`performDisconnect` does the same after the built-in goes off (#224): an external can stay on the tint macOS computed with the built-in lit. One reporter sees that and one desk test didn't, and the toggle changes nothing visible when the tint was right.
+
 ## Auto brightness
 
 `AutoBrightnessService` reads the built-in display's brightness (which macOS auto-adjusts from ambient light) and syncs it to external displays, avoiding the need for Intel-only LMU hardware access.

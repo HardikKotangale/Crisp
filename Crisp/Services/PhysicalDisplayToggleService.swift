@@ -280,6 +280,11 @@ final class PhysicalDisplayToggleService: ObservableObject {
         case .success:
             remember(snapshot)
             PresetService.shared.noteConnectionChange()
+            // macOS keeps the tint it computed with the built-in lit until True Tone is
+            // toggled, so the external stays on it (#224). All disconnect paths land here.
+            if display.isBuiltin, CoreBrightnessService.shared.reassertTrueTone() {
+                Self.log.notice("True Tone re-asserted after the built-in went off (#224)")
+            }
             if fromPreset {
                 await restoreStates(otherStates)
             } else {

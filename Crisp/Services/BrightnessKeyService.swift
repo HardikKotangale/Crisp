@@ -340,28 +340,39 @@ final class BrightnessKeyService: @unchecked Sendable {
         // Option+Shift moves a quarter of a stop, the same finer grid the brightness
         // keys use. Read off the event here, where the flags still are.
         let fine = event.flags.contains([.maskAlternate, .maskShift])
-        Task { @MainActor in
-            let service = VolumeService.shared
-            switch keyCode {
-            case Self.nxKeytypeMute:
-                service.toggleMute(for: target)
-            case Self.nxKeytypeSoundUp:
-                service.setVolume(BrightnessKeySteps.next(from: target.volume, up: true, fine: fine), for: target)
-            default:
-                service.setVolume(BrightnessKeySteps.next(from: target.volume, up: false, fine: fine), for: target)
-            }
-            if let screen = NSScreen.screens.first(where: {
-                ($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID) == target.displayID
-            }) {
-                BrightnessHUDService.shared.show(
-                    level: target.volume,
-                    image: target.volume <= 0 ? .mute : .volume,
-                    on: screen
-                )
-            }
-        }
+        let key: VolumeKey = keyCode == Self.nxKeytypeMute ? .mute : keyCode == Self.nxKeytypeSoundUp ? .up : .down
+        Task { @MainActor in self.adjustVolume(key, of: target, fine: fine) }
         // Consume: macOS must not also show its "no volume control" OSD on top.
         return nil
+    }
+
+    private func adjustVolume(_ key: VolumeKey, of target: DisplayInfo, fine: Bool = false) {
+        let service = VolumeService.shared
+        switch key {
+        case .mute: service.toggleMute(for: target)
+        case .up: service.setVolume(BrightnessKeySteps.next(from: target.volume, up: true, fine: fine), for: target)
+        case .down: service.setVolume(BrightnessKeySteps.next(from: target.volume, up: false, fine: fine), for: target)
+        }
+        if let screen = NSScreen.screens.first(where: {
+            ($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID) == target.displayID
+        }) {
+            BrightnessHUDService.shared.show(
+                level: target.volume,
+                image: target.volume <= 0 ? .mute : .volume,
+                on: screen
+            )
+        }
+    }
+
+    /// A volume shortcut from Settings > Keyboard Shortcuts. It has no event to pass
+    /// through, so when no monitor owns the audio output it moves the output itself.
+    func adjustVolumeFromShortcut(_ key: VolumeKey) {
+        let service = VolumeService.shared
+        if let target = service.displayForDefaultAudioOutput(in: DisplayManagerAccessor.shared.displays) {
+            adjustVolume(key, of: target)
+        } else if let level = service.stepDefaultOutput(key), let screen = NSScreen.main {
+            BrightnessHUDService.shared.show(level: level, image: level <= 0 ? .mute : .volume, on: screen)
+        }
     }
 
     /// The Brightness Keys target setting's displays, or nil to leave the

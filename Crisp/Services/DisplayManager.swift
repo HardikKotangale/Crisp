@@ -121,8 +121,8 @@ class DisplayManager: ObservableObject {
     private func refreshDisplayNames() {
         for display in displays where !display.isBuiltin {
             if let real = NSScreen.screen(for: display.displayID)?.localizedName,
-               real != display.name {
-                display.name = real
+               real != display.systemName {
+                display.systemName = real
             }
         }
     }

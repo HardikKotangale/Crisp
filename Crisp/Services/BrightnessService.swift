@@ -281,6 +281,10 @@ final class BrightnessService: @unchecked Sendable {
 
     /// Per-display DDC max brightness value reported by the monitor.
     /// Used to denormalize 0–100% into the display's native DDC range.
+    /// Doubles as #167's probe ticket: a non-nil entry means "this display answered a read
+    /// since it connected", which is what lets a latched display be probed at all. Only a
+    /// successful read may write it; pre-filling a default here would put a monitor with
+    /// DDC/CI switched off back into the probe path forever.
     private var ddcMaxBrightness: [CGDirectDisplayID: UInt16] = [:]
 
     // MARK: - Public API
@@ -302,9 +306,10 @@ final class BrightnessService: @unchecked Sendable {
     /// `animated: true` glides the slider to the freshly-read value instead of
     /// snapping (used by the poll, so ambient auto-adjust reads as motion).
     /// Instant (default) on load/wake, where the slider should show the real
-    /// value immediately.
+    /// value immediately. `probe: true` (panel open only) also reads an external
+    /// latched to software gamma, to find out whether its channel came back.
     @MainActor
-    func refreshBrightness(for display: DisplayInfo, animated: Bool = false) async {
+    func refreshBrightness(for display: DisplayInfo, animated: Bool = false, probe: Bool = false) async {
         // While boosted above 100 the hardware reads back ~100; adopting that
         // would snap the slider out of the boost region.
         if display.brightness > 100.0 { return }
@@ -335,55 +340,14 @@ final class BrightnessService: @unchecked Sendable {
             let readToken = ddcPumpLock.withLock {
                 ddcOperationGeneration.currentToken(for: displayID)
             }
-            // DDC already known unavailable: nothing to read back from gamma
-            // tables, so leave the value as-is.
-            let knownUnavailable: Bool = ddcAvailableLock.withLock {
-                ddcAvailable[displayID] == false
-            }
-            if knownUnavailable {
-                return
-            }
+            guard let probeQuarantined = ddcReadPlan(for: displayID, probe: probe) else { return }
 
             DDCService.shared.readAsync(
                 displayID: displayID,
-                command: DDCService.brightnessVCP
+                command: DDCService.brightnessVCP,
+                probeQuarantined: probeQuarantined
             ) { [weak self] result in
-                guard let self else { return }
-                if let result = result, result.max > 0 {
-                    let brightness = Double(result.current) / Double(result.max) * 100.0
-                    let firstRead: Bool? = self.ddcPumpLock.withLock {
-                        guard self.ddcOperationGeneration.isCurrentTopology(
-                            readToken, for: displayID
-                        ) else { return nil }
-                        return self.ddcAvailableLock.withLock {
-                            let firstRead = self.ddcAvailable[displayID] != true
-                            self.ddcAvailable[displayID] = true
-                            self.ddcMaxBrightness[displayID] = result.max
-                            return firstRead
-                        }
-                    }
-                    guard let firstRead else { return }
-                    if firstRead {
-                        Self.log.notice("display \(displayID, privacy: .public): DDC brightness read ok \(result.current, privacy: .public)/\(result.max, privacy: .public), brightness over DDC")
-                    }
-                    Task { @MainActor in
-                        // DDC reads quantize, so a value we just set can read
-                        // back slightly off. Adopt the read only on first seed
-                        // or a large enough change to be a real external move.
-                        self.ddcPumpLock.withLock {
-                            guard self.ddcOperationGeneration.isLatestRequest(
-                                readToken, for: displayID
-                            ) else { return }
-                            if firstRead || abs(brightness - display.brightness) > 3.0 {
-                                display.brightness = brightness
-                            }
-                        }
-                    }
-                }
-                // A failed/ignored read does NOT mean DDC is unavailable: many
-                // monitors accept writes but never answer reads. Leaving
-                // availability undetermined lets the write path decide instead
-                // of wrongly forcing the software fallback (see docs/ddc-notes.md).
+                self?.handleBrightnessRead(result, display: display, token: readToken, for: displayID)
             }
         }
     }
@@ -707,12 +671,23 @@ final class BrightnessService: @unchecked Sendable {
     /// (a stale gamma dim would stack on the hardware value) and hand the
     /// pump the next target.
     private func ddcWriteSucceeded(_ target: PendingDDCTarget, for displayID: CGDirectDisplayID) {
+        var verifyPreempted = false
         let settled: (firstSuccess: Bool, hasNewerTarget: Bool)? = ddcPumpLock.withLock {
             guard ddcOperationGeneration.isCurrentTopology(target.token, for: displayID) else {
                 return nil
             }
             let firstSuccess = ddcAvailableLock.withLock { () -> Bool in
                 let was = ddcAvailable[displayID]
+                // A #167 verification write only unlatches if nothing landed while it was out:
+                // a drag during a latched write goes to gamma alone (no pending target), so
+                // unlatching on its ack would leave the slider on the gamma value and the
+                // backlight on the old one, which is #167's own symptom. The next panel open
+                // probes again.
+                if was == false,
+                   !ddcOperationGeneration.isLatestRequest(target.token, for: displayID) {
+                    verifyPreempted = true
+                    return false
+                }
                 ddcAvailable[displayID] = true
                 return was != true
             }
@@ -722,6 +697,11 @@ final class BrightnessService: @unchecked Sendable {
         guard let settled else { return }
         if settled.firstSuccess {
             Self.log.notice("display \(displayID, privacy: .public): DDC brightness write acknowledged, brightness over DDC")
+        }
+        if verifyPreempted {
+            // Without a unit test on this path the log is the only way a report of "it never
+            // came back" can be read afterwards.
+            Self.log.notice("display \(displayID, privacy: .public): recovery write acked but a newer brightness change landed, still software gamma; the next panel open probes again")
         }
         if settled.hasNewerTarget {
             pumpDDCWrite(for: displayID, topology: target.token)
@@ -768,7 +748,9 @@ final class BrightnessService: @unchecked Sendable {
             return
         }
         if outcome.streak == 3 {
-            Self.log.notice("display \(displayID, privacy: .public): 3 consecutive DDC brightness writes failed, brightness now software gamma until reconnect")
+            Self.log.notice("display \(displayID, privacy: .public): 3 consecutive DDC brightness writes failed, brightness now software gamma until DDC answers a read and takes a write again, or the display reconnects")
+        } else if outcome.streak > 3 {
+            Self.log.notice("display \(displayID, privacy: .public): recovery write failed, still software gamma")
         }
         queue.async {
             let isLatest = self.ddcPumpLock.withLock {
@@ -1167,6 +1149,110 @@ extension BrightnessService {
             setInternalBrightness(value)
         } else {
             _ = _DSSetBrightness?(displayID, value)
+        }
+    }
+}
+
+// MARK: - Software-latch recovery (#167)
+
+extension BrightnessService {
+    /// Whether an external's refresh reads DDC, and whether that read is a latch probe.
+    /// A display latched to software gamma is read only on a panel-open probe, and only
+    /// if it answered a read since it connected (a monitor with DDC/CI switched off is
+    /// not probed forever). One read per open finds a channel that came back without a
+    /// reconfiguration, e.g. after the OSD-menu recovery in docs/ddc-notes.md. The 1 s
+    /// poll never reads it: a reconfiguration flushes every read quarantine, and polling
+    /// a dead channel then ties up its queue.
+    /// nil: don't read this display at all. Otherwise: whether the read may spend a probe
+    /// through the read quarantine (true only for a latched display on a panel open).
+    private func ddcReadPlan(for displayID: CGDirectDisplayID, probe: Bool) -> Bool? {
+        let (latched, answeredBefore, hdrDimmed) = ddcAvailableLock.withLock {
+            (ddcAvailable[displayID] == false,
+             ddcMaxBrightness[displayID] != nil,
+             hdrDimmedDisplays.contains(displayID))
+        }
+        guard latched else { return false }
+        // HDR is excluded here as well as in settleDDCRead: the read would be burned for a
+        // recovery that can never happen while the monitor owns its own luminance.
+        return (probe && answeredBefore && !hdrDimmed) ? true : nil
+    }
+
+    /// Applies a brightness read: seeds or adopts the slider, or, for a display latched to
+    /// software gamma, sends the verification write that decides whether it unlatches.
+    ///
+    /// A failed/ignored read does NOT mean DDC is unavailable: many monitors accept
+    /// brightness *writes* but never answer *reads* (they ack the I2C transaction with
+    /// stale/null bytes, now rejected by DDCService). Leaving availability undetermined lets
+    /// the write path decide; marking it false here would wrongly force the gamma/software
+    /// fallback on a display whose hardware backlight control works fine, just showing a
+    /// stale slider value.
+    private func handleBrightnessRead(
+        _ result: (current: UInt16, max: UInt16)?,
+        display: DisplayInfo,
+        token: DDCOperationGeneration.Token,
+        for displayID: CGDirectDisplayID
+    ) {
+        guard let result, result.max > 0 else { return }
+        let brightness = Double(result.current) / Double(result.max) * 100.0
+        guard let outcome = settleDDCRead(max: result.max, token: token, for: displayID) else { return }
+        if outcome.firstRead {
+            Self.log.notice("display \(displayID, privacy: .public): DDC brightness read ok \(result.current, privacy: .public)/\(result.max, privacy: .public), brightness over DDC")
+        }
+        if outcome.verifyWrite {
+            // The channel answered a read, but the latch is about writes, so prove it takes
+            // one before leaving gamma (docs/ddc-notes.md, #167). The write carries what the
+            // slider already shows, so the level the user picked survives; the read value must
+            // NOT reach the slider here, which is why the adoption below is the other branch
+            // and not a second Task racing this one.
+            Task { @MainActor in
+                // Same guard as refreshBrightness's entry: the read was async, and Extra
+                // Brightness may have engaged meanwhile. Clamping to 100 here would write
+                // through the boost overlay's transfer table and drop the picture a step.
+                guard display.brightness <= 100 else { return }
+                self.writeDDCBrightnessCoalesced(percent: display.brightness, for: displayID)
+            }
+        } else {
+            Task { @MainActor in
+                // DDC reads quantize (many panels expose a coarser internal scale than they
+                // accept), so a value we just set can read back 1-2% off and twitch the slider
+                // on every open. Adopt the read only on the first seed, or when it differs
+                // enough to be a real external change (the monitor's own buttons), not noise.
+                self.ddcPumpLock.withLock {
+                    guard self.ddcOperationGeneration.isLatestRequest(token, for: displayID) else { return }
+                    if outcome.firstRead || abs(brightness - display.brightness) > 3.0 {
+                        display.brightness = brightness
+                    }
+                }
+            }
+        }
+    }
+
+    /// Records a successful brightness read. nil: stale topology, or a latched display whose
+    /// read says nothing usable. A latched display does NOT unlatch here: the latch is about
+    /// writes, so the read only earns it a verification write (the caller sends it), and only
+    /// if no drag or reconnect landed during the read (that drag went to gamma and owns the
+    /// slider), and not in HDR, where the hardware value means nothing.
+    private func settleDDCRead(
+        max ddcMax: UInt16,
+        token: DDCOperationGeneration.Token,
+        for displayID: CGDirectDisplayID
+    ) -> (firstRead: Bool, verifyWrite: Bool)? {
+        ddcPumpLock.withLock { () -> (firstRead: Bool, verifyWrite: Bool)? in
+            guard ddcOperationGeneration.isCurrentTopology(token, for: displayID) else { return nil }
+            return ddcAvailableLock.withLock { () -> (firstRead: Bool, verifyWrite: Bool)? in
+                let was = ddcAvailable[displayID]
+                if was == false {
+                    guard ddcOperationGeneration.isLatestRequest(token, for: displayID),
+                          !hdrDimmedDisplays.contains(displayID) else { return nil }
+                    // The write scale the verification write needs; the latch and the slider
+                    // stay as they are until that write acks (ddcWriteSucceeded unlatches).
+                    ddcMaxBrightness[displayID] = ddcMax
+                    return (false, true)
+                }
+                ddcAvailable[displayID] = true
+                ddcMaxBrightness[displayID] = ddcMax
+                return (was != true, false)
+            }
         }
     }
 }

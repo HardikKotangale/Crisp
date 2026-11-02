@@ -445,6 +445,38 @@
         }
       }
     },
+    "Text size" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文字大小"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文字大小"
+          }
+        }
+      }
+    },
+    "Text size: makes text, icons and windows larger on this display. They stay sharp." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文字大小：放大此显示器上的文字、图标和窗口，并保持清晰。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文字大小：放大此顯示器上的文字、圖像和視窗，並保持清晰。"
+          }
+        }
+      }
+    },
     "The monitor did not take the input change." : {
       "localizations" : {
         "zh-Hans" : {
@@ -1018,6 +1050,22 @@
         }
       }
     },
+    "Changes the volume of whatever is playing the sound. An F-key works on its own, with no ⌘, ⌥ or ⌃." : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "调整正在播放声音的设备的音量。F 键可单独使用，无需 ⌘、⌥ 或 ⌃。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "調整正在播放聲音的裝置的音量。F 鍵可單獨使用，無需 ⌘、⌥ 或 ⌃。"
+          }
+        }
+      }
+    },
     "Check for Updates at Launch" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1143,6 +1191,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "顏色歷史"
+          }
+        }
+      }
+    },
+    "Color Mode" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "色彩模式"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "色彩模式"
           }
         }
       }
@@ -1722,7 +1786,6 @@
       }
     },
     "Display Name" : {
-      "extractionState" : "stale",
       "localizations" : {
         "zh-Hans" : {
           "stringUnit" : {
@@ -2574,6 +2637,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "多數尺寸經過縮放，會略顯模糊"
+          }
+        }
+      }
+    },
+    "Mute" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "静音"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "靜音"
           }
         }
       }
@@ -4312,6 +4391,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "音量控制"
+          }
+        }
+      }
+    },
+    "Volume Down" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "降低音量"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "降低音量"
+          }
+        }
+      }
+    },
+    "Volume Up" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提高音量"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "提高音量"
           }
         }
       }

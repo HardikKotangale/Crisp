@@ -92,7 +92,7 @@ struct ShortcutRecorderRow: View {
             }
             let label = KeyboardShortcut.keyLabel(
                 keyCode: event.keyCode, characters: event.charactersIgnoringModifiers)
-            // nil = no ⌘⌥⌃ anchor yet (typing, not a shortcut): swallow, keep listening.
+            // nil = no ⌘⌥⌃ anchor and not an F-key (typing, not a shortcut): swallow, keep listening.
             if let recorded = KeyboardShortcut(
                 keyCode: event.keyCode, nsModifierFlags: event.modifierFlags.rawValue,
                 keyLabel: label) {

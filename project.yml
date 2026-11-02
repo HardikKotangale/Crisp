@@ -18,6 +18,7 @@ targets:
     sources:
       - path: Crisp
         excludes:
+          - "Resources/AudioCapture-Info.plist"
           - "**/*.md"
     dependencies:
       # Prebuilt Sparkle, fetched by scripts/fetch-sparkle.sh (make vendor).
@@ -33,6 +34,8 @@ targets:
         CURRENT_PROJECT_VERSION: "5"
         INFOPLIST_KEY_LSUIElement: true
         INFOPLIST_KEY_NSHumanReadableCopyright: "Crisp - Free & Open Source"
+        # Not a key the generated Info.plist can take directly, so it merges this file.
+        INFOPLIST_FILE: Crisp/Resources/AudioCapture-Info.plist
         INFOPLIST_KEY_NSAppleEventsUsageDescription: "Crisp uses System Events to switch Dark Mode with the system's animated transition."
         SWIFT_VERSION: "6.0"
         CODE_SIGN_ENTITLEMENTS: Crisp/Crisp.entitlements
@@ -88,6 +91,8 @@ targets:
       - path: Crisp/Models/DDCVolumeMax.swift
       - path: Crisp/Models/EdgeCrossing.swift
       - path: Crisp/Models/DDCInputSource.swift
+      - path: Crisp/Models/DisplayColorMode.swift
+      - path: Crisp/Models/DisplayScale.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.crisp.tests

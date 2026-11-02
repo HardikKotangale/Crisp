@@ -101,4 +101,12 @@ final class KeyboardShortcutTests: XCTestCase {
         XCTAssertTrue(a.sameKeys(as: b))
         XCTAssertFalse(a.sameKeys(as: c))
     }
+
+    func testAnFKeyStandsAloneButALetterDoesNot() throws {
+        let f11 = try XCTUnwrap(KeyboardShortcut(keyCode: 103, nsModifierFlags: 0, keyLabel: "F11"))
+        XCTAssertEqual(f11.carbonModifiers, 0)
+        XCTAssertEqual(f11.display, "F11")
+        XCTAssertNil(KeyboardShortcut(keyCode: 49, nsModifierFlags: 0, keyLabel: "Space"))
+        XCTAssertNil(KeyboardShortcut(keyCode: 123, nsModifierFlags: 0, keyLabel: "←"))
+    }
 }

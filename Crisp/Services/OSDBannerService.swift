@@ -130,7 +130,8 @@ final class OSDBannerService {
             panel = makePanel()
             panels[displayID] = panel
         }
-        panel.model.title = screen.localizedName
+        panel.model.title = DisplayInfo.cgDisplayUUID(displayID)
+            .flatMap(SettingsService.shared.displayName(forDisplayUUID:)) ?? screen.localizedName
         panel.model.image = image
         panel.model.level = max(0, min(1, level / 100))
         // Re-wired on every show: the display is the panel's own, but what it

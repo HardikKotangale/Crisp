@@ -5,7 +5,7 @@ enum CrispControlSkill {
     static let text = #"""
     ---
     name: crispctl
-    description: Control displays on a Mac that runs Crisp through its crispctl command line tool. Use when the user wants to read or set display brightness, switch Extra Brightness or HDR, list displays, disconnect and reconnect a display, switch a monitor's input, change Image Adjustment (contrast, color temperature, gamma), or list and apply saved presets from a script, a shortcut or an agent.
+    description: Control displays on a Mac that runs Crisp through its crispctl command line tool. Use when the user wants to read or set display brightness, switch Extra Brightness or HDR, list displays, disconnect and reconnect a display, switch a monitor's input, rename a display, scale a display's text and icons, read or switch its color mode, change Image Adjustment (contrast, color temperature, gamma), or list and apply saved presets from a script, a shortcut or an agent.
     ---
 
     # crispctl
@@ -36,6 +36,12 @@ enum CrispControlSkill {
     `hdr get|set <display> [on|off]`: only for externals that show Crisp's HDR toggle; the built-in panel and externals without HDR modes are refused. `set` reads the state back and says so if it cannot tell.
 
     `display disconnect|connect|toggle <display>`: the menu's Disconnect Display and Reconnect. Apple Silicon only. A disconnect that would leave no active display is refused. A display that Crisp holds disconnected is gone from every macOS list, so `display list` shows it with `connected:false` and its last-known id: address it by uuid. Asking for the state a display is already in succeeds and changes nothing. The reply can take a few seconds.
+
+    `display rename <display> [<name>]`: saves a name for the display's uuid; without `<name>` it goes back to the macOS name. macOS numbers identical monitors itself, so its `(1)` and `(2)` can be on the wrong screens.
+
+    `display scale list <display>` and `display scale set <display> <percent>`: Windows-style scale on an external: everything larger and still sharp, the menu's text size slider. `list` gives `scales` (each a `value`, its percentage, and a `name` with the size it looks like) and `current`. The screen can go black for a moment, so only switch when the user asked for it.
+
+    `display color list <display>` and `display color set <display> <mode>`: the signal's color mode on an external, Apple Silicon only, the menu's Color Mode row. `list` gives `colorModes` (each a `value` and a `name` such as `RGB 8-bit Full`) and `current`. `set` takes a name or a value. The screen can go black for a moment, so only switch when the user asked for it. It lasts until the display reconnects, which is also the way back from a mode the monitor cannot show.
 
     `display input list <display>` and `display input set <display> <input>`: input select over DDC, the menu's Input row. `list` gives `inputs` (each a `value` and a `name`, from what the monitor reports, else a standard list) and `current`, the input this Mac is on, or null when Crisp cannot read it. The first `list` for a monitor reads its capabilities and can take half a minute. `set` takes a name (`HDMI 1`, `hdmi1`, `dp2`, `usb-c`) or a number, decimal (`17`) or hex (`0x11`). The monitor then shows the other computer, and Crisp disconnects the display so macOS frees its space; the reply's `connected` says whether it did (not on the last active display). `display connect <display>` brings it back and switches the monitor to this Mac. A `set` is refused when Crisp cannot read the Mac's input and nobody chose it in the menu.
 
